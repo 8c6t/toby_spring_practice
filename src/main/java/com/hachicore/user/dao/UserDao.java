@@ -4,11 +4,10 @@ import com.hachicore.user.domain.User;
 
 import java.sql.*;
 
-public class UserDao {
+public abstract class UserDao {
 
     public void add(User user) throws ClassNotFoundException, SQLException {
-        Class.forName("com.mysql.jdbc.Driver");
-        Connection c = DriverManager.getConnection("jdbc:mysql://localhost/springbook", "spring", "book");
+        Connection c = getConnection();
 
         PreparedStatement ps = c.prepareStatement(
                 "insert into users(id, name, passowrd) values (?, ?, ?)"
@@ -24,8 +23,7 @@ public class UserDao {
     }
 
     public User get(String id) throws ClassNotFoundException, SQLException {
-        Class.forName("com.mysql.jdbc.Driver");
-        Connection c = DriverManager.getConnection("jdbc:mysql://localhost/springbook", "spring", "book");
+        Connection c = getConnection();
 
         PreparedStatement ps = c.prepareStatement(
                 "select * from users where id = ?"
@@ -47,23 +45,20 @@ public class UserDao {
         return user;
     }
 
-    public static void main(String[] args) throws SQLException, ClassNotFoundException {
-        UserDao dao = new UserDao();
+    public abstract Connection getConnection() throws ClassNotFoundException, SQLException;
 
-        User user = new User();
-        user.setId("hachicore");
-        user.setName("말랑말랑");
-        user.setPassword("malangmalang");
+    public class NUserDao extends UserDao {
+        @Override
+        public Connection getConnection() throws ClassNotFoundException, SQLException {
+            return null;
+        }
+    }
 
-        dao.add(user);
-
-        System.out.println(user.getId() + "등록 성공");
-
-        User user2 = dao.get(user.getId());
-        System.out.println(user2.getName());
-        System.out.println(user2.getPassword());
-
-        System.out.println(user2.getId() + "조회 성공");
+    public class DUserDao extends UserDao {
+        @Override
+        public Connection getConnection() throws ClassNotFoundException, SQLException {
+            return null;
+        }
     }
 
 }

@@ -4,17 +4,20 @@ import com.hachicore.user.dao.UserDao;
 import com.hachicore.user.domain.User;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.GenericXmlApplicationContext;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+// @RunWith(SpringJUnit4ClassRunner.class)
+// @ContextConfiguration(locations = "/test-applicationContext.xml")
 public class UserDaoTest {
 
+    // @Autowired
     private UserDao dao;
 
     private User user1;
@@ -23,8 +26,9 @@ public class UserDaoTest {
 
     @Before
     public void setUp() {
-        ApplicationContext context = new GenericXmlApplicationContext("applicationContext.xml");
-        this.dao = context.getBean("userDao", UserDao.class);
+        dao = new UserDao();
+        DataSource dataSource = new SingleConnectionDataSource("jdbc:mysql://localhost/testdb", "spring", "book", true);
+        dao.setDataSource(dataSource);
 
         user1 = new User("테스트1", "테스트1", "test1");
         user2 = new User("테스트2", "테스트2", "test2");

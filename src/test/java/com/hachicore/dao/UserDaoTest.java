@@ -1,14 +1,18 @@
-package com.hachicore.user.dao;
+package com.hachicore.dao;
 
+import com.hachicore.user.dao.UserDao;
 import com.hachicore.user.domain.User;
+import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericXmlApplicationContext;
 
-import java.sql.SQLException;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 public class UserDaoTest {
 
-    public static void main(String[] args) throws SQLException, ClassNotFoundException {
+    @Test
+    public void addAndGet() throws Exception {
         ApplicationContext context = new GenericXmlApplicationContext("applicationContext.xml");
         UserDao dao = context.getBean("userDao", UserDao.class);
 
@@ -19,13 +23,10 @@ public class UserDaoTest {
 
         dao.add(user);
 
-        System.out.println(user.getId() + "등록 성공");
-
         User user2 = dao.get(user.getId());
-        System.out.println(user2.getName());
-        System.out.println(user2.getPassword());
 
-        System.out.println(user2.getId() + " 조회 성공");
+        assertThat(user2.getName(), is(user.getName()));
+        assertThat(user2.getPassword(), is(user.getPassword()));
     }
 
 }

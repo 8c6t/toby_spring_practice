@@ -1,6 +1,7 @@
 package com.hachicore.dao;
 
 import com.hachicore.user.dao.UserDao;
+import com.hachicore.user.domain.Level;
 import com.hachicore.user.domain.User;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,9 +37,9 @@ public class UserDaoJdbcTest {
 
     @Before
     public void setUp() {
-        user1 = new User("테스트1", "테스트1", "test1");
-        user2 = new User("테스트2", "테스트2", "test2");
-        user3 = new User("테스트3", "테스트3", "test3");
+        user1 = new User("테스트1", "테스트1", "test1", Level.BASIC, 1, 0);
+        user2 = new User("테스트2", "테스트2", "test2", Level.SILVER, 55, 10);
+        user3 = new User("테스트3", "테스트3", "test3", Level.GOLD, 100, 40);
     }
 
     @Test
@@ -51,12 +52,10 @@ public class UserDaoJdbcTest {
         assertThat(dao.getCount(), is(2));
 
         User userGet1 = dao.get(user1.getId());
-        assertThat(userGet1.getName(), is(user1.getName()));
-        assertThat(userGet1.getPassword(), is(user1.getPassword()));
+        checkSameUser(userGet1, user1);
 
         User userGet2 = dao.get(user2.getId());
-        assertThat(userGet2.getName(), is(user2.getName()));
-        assertThat(userGet2.getPassword(), is(user2.getPassword()));
+        checkSameUser(userGet2, user2);
     }
 
     @Test(expected = EmptyResultDataAccessException.class)
@@ -130,9 +129,33 @@ public class UserDaoJdbcTest {
         }
     }
 
+    @Test
+    public void update() {
+        dao.deleteAll();
+
+        dao.add(user1);
+        dao.add(user2);
+
+        user1.setName("말랑말랑");
+        user1.setPassword("malangmalang");
+        user1.setLevel(Level.GOLD);
+        user1.setLogin(1000);
+        user1.setRecommend(999);
+        dao.update(user1);
+
+        User user1update = dao.get(user1.getId());
+        checkSameUser(user1, user1update);
+
+        User user2same = dao.get(user2.getId());
+        checkSameUser(user2, user2same);
+    }
+
     private void checkSameUser(User user1, User user2) {
         assertThat(user1.getId(), is(user2.getId()));
         assertThat(user1.getName(), is(user2.getName()));
         assertThat(user1.getPassword(), is(user2.getPassword()));
+        assertThat(user1.getLevel(), is(user2.getLevel()));
+        assertThat(user1.getLogin(), is(user2.getLogin()));
+        assertThat(user1.getRecommend(), is(user2.getRecommend()));
     }
 }

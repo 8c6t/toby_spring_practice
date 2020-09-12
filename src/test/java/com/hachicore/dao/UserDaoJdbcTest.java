@@ -4,8 +4,14 @@ import com.hachicore.user.dao.UserDao;
 import com.hachicore.user.domain.User;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
+import org.springframework.jdbc.support.SQLExceptionTranslator;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
@@ -14,12 +20,15 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-// @RunWith(SpringJUnit4ClassRunner.class)
-// @ContextConfiguration(locations = "/test-applicationContext.xml")
-public class UserDaoTest {
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "/test-applicationContext.xml")
+public class UserDaoJdbcTest {
 
-    // @Autowired
+    @Autowired
     private UserDao dao;
+
+    @Autowired
+    private DataSource dataSource;
 
     private User user1;
     private User user2;
@@ -27,10 +36,6 @@ public class UserDaoTest {
 
     @Before
     public void setUp() {
-        dao = new UserDao();
-        DataSource dataSource = new SingleConnectionDataSource("jdbc:mysql://localhost/testdb", "spring", "book", true);
-        dao.setDataSource(dataSource);
-
         user1 = new User("테스트1", "테스트1", "test1");
         user2 = new User("테스트2", "테스트2", "test2");
         user3 = new User("테스트3", "테스트3", "test3");
@@ -78,7 +83,7 @@ public class UserDaoTest {
     }
 
     @Test
-    public void getAll() throws SQLException {
+    public void getAll() throws Exception {
         dao.deleteAll();
 
         List<User> users0 = dao.getAll();
@@ -101,6 +106,28 @@ public class UserDaoTest {
         checkSameUser(user1, users1.get(0));
         checkSameUser(user2, users1.get(1));
         checkSameUser(user3, users1.get(2));
+    }
+
+    @Test(expected = DuplicateKeyException.class)
+    public void duplicateKey() {
+        dao.deleteAll();
+
+        dao.add(user1);
+        dao.add(user1);
+    }
+
+    @Test
+    public void sqlExceptionTranslate() {
+        dao.deleteAll();
+
+        try {
+            dao.add(user1);
+            dao.add(user1);
+        } catch (DuplicateKeyException ex) {
+            SQLException sqlEx = (SQLException) ex.getRootCause();
+            SQLExceptionTranslator set = new SQLErrorCodeSQLExceptionTranslator(this.dataSource);
+            assertThat(set.translate(null, null, sqlEx), is(DuplicateKeyException.class));
+        }
     }
 
     private void checkSameUser(User user1, User user2) {

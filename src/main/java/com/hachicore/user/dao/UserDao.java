@@ -1,80 +1,53 @@
 package com.hachicore.user.dao;
 
 import com.hachicore.user.domain.User;
-import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.List;
 
 public class UserDao {
 
-    private DataSource dataSource;
-    private JdbcContext jdbcContext;
+    private JdbcTemplate jdbcTemplate;
 
     public void setDataSource(DataSource dataSource) {
-        this.jdbcContext = new JdbcContext();
-        this.jdbcContext.setDataSource(dataSource);
-        this.dataSource = dataSource;
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public void add(final User user) throws SQLException {
-        jdbcContext.workWithStatementStrategy(c -> {
-            PreparedStatement ps = c.prepareStatement(
-                    "insert into users(id, name, passowrd) values (?, ?, ?)"
-            );
-            ps.setString(1, user.getId());
-            ps.setString(2, user.getName());
-            ps.setString(3, user.getPassword());
-
-            return ps;
-        });
-    }
-
-    public User get(String id) throws SQLException {
-        Connection c = dataSource.getConnection();
-
-        PreparedStatement ps = c.prepareStatement(
-                "select * from users where id = ?"
-        );
-        ps.setString(1, id);
-
-        ResultSet rs = ps.executeQuery();
-
-        User user = null;
-        if (rs.next()) {
-            user = new User();
-            user.setId(rs.getString("id"));
-            user.setName(rs.getString("name"));
-            user.setPassword(rs.getString("password"));
-        }
-
-        rs.close();
-        ps.close();
-        c.close();
-
-        if (user == null) throw new EmptyResultDataAccessException(1);
+    private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
+        User user = new User();
+        user.setId(rs.getString("id"));
+        user.setName(rs.getString("name"));
+        user.setPassword(rs.getString("password"));
         return user;
+    };
+
+    public void add(final User user) {
+        jdbcTemplate.update("insert into users(id, name, password) values (?, ?, ?)", user.getId(), user.getName(), user.getPassword());
     }
 
-    public void deleteAll() throws SQLException {
-        this.jdbcContext.executeSql("delete from users");
+    public User get(String id) {
+        return this.jdbcTemplate.queryForObject(
+                "select * from users where id = ?",
+                new Object[]{id},
+                this.userRowMapper
+        );
     }
 
-    public int getCount() throws SQLException {
-        try (
-                Connection c = dataSource.getConnection();
-                PreparedStatement ps = c.prepareStatement("select count(*) from users");
-                ResultSet rs = ps.executeQuery()
-        ) {
-            rs.next();
-            return rs.getInt(1);
-        } catch (SQLException e) {
-            throw e;
-        }
+    public void deleteAll() {
+        this.jdbcTemplate.update("delete from users");
+    }
+
+    public int getCount() {
+        return this.jdbcTemplate.queryForInt("select count(*) from users");
     }
 
 
+    public List<User> getAll() {
+        return this.jdbcTemplate.query(
+                "select * from users order by id",
+                this.userRowMapper
+        );
+    }
 }

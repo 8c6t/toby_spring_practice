@@ -30,13 +30,14 @@ public class UserDaoJdbc implements UserDao {
 
     public void add(final User user) {
         jdbcTemplate.update(
-                "insert into users(id, name, password) values (?, ?, ?)",
+                "insert into users(id, name, password) values (?, ?, ?, ?, ?, ?, ?)",
                 user.getId(),
                 user.getName(),
                 user.getPassword(),
                 user.getLevel().intValue(),
                 user.getLogin(),
-                user.getRecommend()
+                user.getRecommend(),
+                user.getEmail()
         );
     }
 
@@ -59,12 +60,13 @@ public class UserDaoJdbc implements UserDao {
     @Override
     public void update(User user) {
         this.jdbcTemplate.update(
-                "update users set name = ?, password = ?, level = ?, login = ?, recommend = ? where id = ?",
+                "update users set name = ?, password = ?, level = ?, login = ?, recommend = ?, email = ? where id = ?",
                 user.getName(),
                 user.getPassword(),
                 user.getLevel().intValue(),
                 user.getLogin(),
                 user.getRecommend(),
+                user.getEmail(),
                 user.getId()
         );
     }

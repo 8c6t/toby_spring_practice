@@ -19,9 +19,11 @@
         <property name="mailSender" ref="mailSender"/>
     </bean>
 
-    <bean id="userService" class="com.hachicore.user.service.UserServiceTx">
-        <property name="userService" ref="userServiceImpl"/>
+    <bean id="userService" class="com.hachicore.user.service.TxProxyFactoryBean">
+        <property name="target" ref="userServiceImpl"/>
         <property name="transactionManager" ref="transactionManager"/>
+        <property name="pattern" value="upgradeLevels"/>
+        <property name="serviceInterface" value="com.hachicore.user.service.UserService"/>
     </bean>
 
     <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">

@@ -3,7 +3,8 @@ package com.hachicore.service;
 import com.hachicore.user.dao.UserDao;
 import com.hachicore.user.domain.Level;
 import com.hachicore.user.domain.User;
-import com.hachicore.user.service.UserService;
+import com.hachicore.user.service.UserServiceImpl;
+import com.hachicore.user.service.UserServiceTx;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,8 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hachicore.user.service.UserService.MIN_LOGCOUNT_FOR_SILVER;
-import static com.hachicore.user.service.UserService.MIN_RECOMMEND_FOR_GOLD;
+import static com.hachicore.user.service.UserServiceImpl.MIN_LOGCOUNT_FOR_SILVER;
+import static com.hachicore.user.service.UserServiceImpl.MIN_RECOMMEND_FOR_GOLD;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -32,7 +33,7 @@ import static org.junit.Assert.fail;
 public class UserServiceTest {
 
     @Autowired
-    UserService userService;
+    UserServiceImpl userServiceImpl;
 
     @Autowired
     UserDao userDao;
@@ -45,7 +46,7 @@ public class UserServiceTest {
 
     List<User> users;
 
-    static class TestUserService extends UserService {
+    static class TestUserService extends UserServiceImpl {
         private final String id;
 
         public TestUserService(String id) {
@@ -53,7 +54,7 @@ public class UserServiceTest {
         }
 
         @Override
-        protected void upgradeLevel(User user) throws Exception {
+        protected void upgradeLevel(User user) {
             if (user.getId().equals(this.id)) {
                 super.upgradeLevels();
             }
@@ -93,12 +94,12 @@ public class UserServiceTest {
 
     @Test
     public void bean() {
-        assertThat(this.userService, is(notNullValue()));
+        assertThat(this.userServiceImpl, is(notNullValue()));
     }
 
     @Test
     @DirtiesContext
-    public void upgradeLevels() throws Exception {
+    public void upgradeLevels() {
         userDao.deleteAll();
 
         for (User user : users) {
@@ -106,9 +107,9 @@ public class UserServiceTest {
         }
 
         MockMailSender mockMailSender = new MockMailSender();
-        userService.setMailSender(mockMailSender);
+        userServiceImpl.setMailSender(mockMailSender);
 
-        userService.upgradeLevels();
+        userServiceImpl.upgradeLevels();
 
         checkLevelUpgraded(users.get(0), false);
         checkLevelUpgraded(users.get(0), true);
@@ -130,8 +131,8 @@ public class UserServiceTest {
         User userWithoutLevel = users.get(0);
         userWithoutLevel.setLevel(null);
 
-        userService.add(userWithLevel);
-        userService.add(userWithoutLevel);
+        userServiceImpl.add(userWithLevel);
+        userServiceImpl.add(userWithoutLevel);
 
         User userWithLevelRead = userDao.get(userWithLevel.getId());
         User userWithoutLevelRead = userDao.get(userWithoutLevel.getId());
@@ -141,11 +142,14 @@ public class UserServiceTest {
     }
 
     @Test
-    public void upgradeAllOrNothing() throws Exception {
-        UserService testUserService = new TestUserService(users.get(3).getId());
+    public void upgradeAllOrNothing() {
+        TestUserService testUserService = new TestUserService(users.get(3).getId());
         testUserService.setUserDao(this.userDao);
-        testUserService.setTransactionManager(transactionManager);
         testUserService.setMailSender(mailSender);
+
+        UserServiceTx txUserService = new UserServiceTx();
+        txUserService.setTransactionManager(transactionManager);
+        txUserService.setUserService(testUserService);
 
         userDao.deleteAll();
 
@@ -154,7 +158,7 @@ public class UserServiceTest {
         }
 
         try {
-            testUserService.upgradeLevels();
+            txUserService.upgradeLevels();
             fail("TestUserServiceException expected");
         } catch (TestUserServiceException e) {
 

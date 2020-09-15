@@ -14,8 +14,13 @@
         <property name="dataSource" ref="dataSource"/>
     </bean>
 
-    <bean id="userService" class="com.hachicore.user.service.UserService">
+    <bean id="userServiceImpl" class="com.hachicore.user.service.UserServiceImpl">
         <property name="userDao" ref="userDao"/>
+        <property name="mailSender" ref="mailSender"/>
+    </bean>
+
+    <bean id="userService" class="com.hachicore.user.service.UserServiceTx">
+        <property name="userService" ref="userServiceImpl"/>
         <property name="transactionManager" ref="transactionManager"/>
     </bean>
 

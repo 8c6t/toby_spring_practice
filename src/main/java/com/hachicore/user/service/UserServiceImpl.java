@@ -5,9 +5,11 @@ import com.hachicore.user.domain.Level;
 import com.hachicore.user.domain.User;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Transactional
 public class UserServiceImpl implements UserService {
 
     public static final int MIN_LOGCOUNT_FOR_SILVER = 50;

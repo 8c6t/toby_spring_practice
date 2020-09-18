@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
@@ -142,6 +143,13 @@ public class UserServiceTest {
             }
             super.upgradeLevel(user);
         }
+
+        public List<User> getAll() {
+            for (User user : super.getAll()) {
+                super.update(user);
+            }
+            return null;
+        }
     }
 
     @Before
@@ -234,6 +242,11 @@ public class UserServiceTest {
         }
 
         checkLevelUpgraded(users.get(1), false);
+    }
+
+    @Test(expected = TransientDataAccessException.class)
+    public void readOnlyTransactionAttribute() {
+        testUserService.getAll();
     }
 
     private void checkLevelUpgraded(User user, boolean upgraded) {
